@@ -1,0 +1,115 @@
+import os
+import sys
+
+def reduce(line):
+    result = ""
+    previousi = ""
+    for i in line:
+        if i == " " and previousi != " ":
+            result += " "
+        elif i == " " and previousi == " ":
+            pass
+        else:
+            result += i
+    return result
+
+def tail_whitespace_reduce(line):
+    result = ""
+    i = 0
+    try:
+        while line[i] == " ":
+            i += 1
+            pass
+    except:
+        pass
+        
+    for j in range(i, len(line)):
+        result += line[j]     
+    
+    print result
+    
+    return result
+
+FILE_NAME = sys.argv[1].rstrip(".py")
+
+POSSIBLE_COMMENT = 0
+PREPROCESSOR = 0
+IDENTIFIED_PREPROCESSOR = [0, ""]
+IN_STRING = [None, 0]
+IN_BRACKET = 0
+INDENT_LEVEL = 0
+TOTAL_SPACES = 0
+
+fw = open(FILE_NAME + ".npy", "w")
+
+with open(FILE_NAME + ".py") as f:
+    for line in f:
+        line = tail_whitespace_reduce(line)
+        for j in range(INDENT_LEVEL):
+            fw.write("\t")
+        for i in range (len(line)):
+            
+            if (line[i] == '"' or line[i] == "'") and IN_STRING[1] != 1:
+                IN_STRING[0] = line[i]
+                IN_STRING[1] = 1
+            elif line[i] == IN_STRING[0]:
+                IN_STRING = [None, 0]
+            
+            if line[i] == '#' and IN_STRING[1] == 0:
+                PREPROCESSOR = 1
+                continue
+                print "found preprocessor" 
+            
+            if line[i] == '{' and IN_STRING[1] == 0 and PREPROCESSOR == 0:
+                fw.write(":")
+                IN_BRACKET = 1
+                INDENT_LEVEL += 1
+                continue
+            elif line[i] == '}' and IN_STRING[1] == 0 and PREPROCESSOR == 0 and IN_BRACKET == 1:
+                INDENT_LEVEL -= 1
+                continue
+
+            elif line[i] == '}' and IN_STRING[1] == 0 and PREPROCESSOR == 0 and IN_BRACKET == 0:
+                print "Unmatched brackets!"
+                Quit()
+            
+            if line[i] == '/' and POSSIBLE_COMMENT == 0 and IN_STRING[1] == 0 and PREPROCESSOR == 0:
+                POSSIBLE_COMMENT = 1
+            elif line[i] == '/' and POSSIBLE_COMMENT == 1 and IN_STRING[1] == 0 and PREPROCESSOR == 0:
+                fw.write("#")
+                POSSIBLE_COMMENT = 0
+            else:
+                if PREPROCESSOR == 0:
+                    if POSSIBLE_COMMENT == 1:
+                        fw.write(line[i - 1])
+                    
+                    fw.write(line[i])
+                    
+                    POSSIBLE_COMMENT = 0
+                else:
+                    for p in reduce(line):
+                        if p == "#":
+                            continue 
+                        if IDENTIFIED_PREPROCESSOR[0] == 0:
+                            IDENTIFIED_PREPROCESSOR[1] += p
+                            #print IDENTIFIED_PREPROCESSOR[1]
+                            if IDENTIFIED_PREPROCESSOR[1] == "DEFINE ":
+                                IDENTIFIED_PREPROCESSOR[0] = 1
+                                continue
+                            
+                        if IDENTIFIED_PREPROCESSOR[0] == 1:     
+                            if p == ' ':
+                                fw.write('=')
+                            else:
+                                fw.write(p)
+                    break;             
+
+            #sprint line[i]                
+        PREPROCESSOR = 0                        
+        IDENTIFIED_PREPROCESSOR = [0, ""]
+
+string = "python " + FILE_NAME + ".npy Arg"            
+os.system(string, )
+#raw_input("")
+                
+    
